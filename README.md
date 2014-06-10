@@ -1,0 +1,6 @@
+# varstruct-auto
+
+
+## License
+
+MIT
