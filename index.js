@@ -31,11 +31,10 @@ module.exports = function (tagCodec) {
       }
       offset = offset | 0
       tagCodec.encode(rule.match, buffer, offset)
-      offset += tagCodec.encode.bytesWritten
+      offset += tagCodec.encode.bytes
       rule.codec.encode(value, buffer, offset)
-      encode.bytesWritten =
-          tagCodec.encode.bytesWritten
-        + rule.codec.encode.bytesWritten
+      encode.bytes = tagCodec.encode.bytes + rule.codec.encode.bytes
+
       return buffer
     },
     decode: function decode (buffer, offset) {
@@ -43,11 +42,9 @@ module.exports = function (tagCodec) {
       var match = tagCodec.decode(buffer, offset)
       if(match === undefined) return undefined
       var rule = find(codecs, function (e) { return e.match === match })
-      offset += tagCodec.decode.bytesRead
+      offset += tagCodec.decode.bytes
       var value = rule.codec.decode(buffer, offset)
-      decode.bytesRead =
-          tagCodec.decode.bytesRead
-        + rule.codec.decode.bytesRead
+      decode.bytes = tagCodec.decode.bytes + rule.codec.decode.bytes
       return value
     },
     encodingLength: function (value) { return _length(value, getRule(value)) },
