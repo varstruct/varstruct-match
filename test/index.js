@@ -41,11 +41,11 @@ expected.forEach(function (e) {
   tape('encode/decode:' + JSON.stringify(e), function (t) {
     var buffer = codec.encode(e)
     console.log('encoded:', buffer)
-    t.equal(buffer.length, codec.encode.bytesWritten)
+    t.equal(buffer.length, codec.encode.bytes)
     console.log('decoded:', codec.decode(buffer))
 
     t.deepEqual(codec.decode(buffer), e)
-    t.equal(buffer.length, codec.decode.bytesRead)
+    t.equal(buffer.length, codec.decode.bytes)
     t.end()
   })
 })
@@ -53,8 +53,8 @@ expected.forEach(function (e) {
 tape('encode/decode all', function (t) {
   var allcodec = varstruct.vararray(varint, codec)
   var buffer = allcodec.encode(expected)
-  t.equal(buffer.length, allcodec.encode.bytesWritten)
+  t.equal(buffer.length, allcodec.encode.bytes)
   t.deepEqual(allcodec.decode(buffer), expected)
-  t.equal(buffer.length, allcodec.decode.bytesRead)
+  t.equal(buffer.length, allcodec.decode.bytes)
   t.end()
 })
