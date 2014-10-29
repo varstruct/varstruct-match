@@ -40,11 +40,19 @@ module.exports = function (tagCodec) {
     decode: function decode (buffer, offset) {
       offset = offset | 0
       var match = tagCodec.decode(buffer, offset)
-      if(match === undefined) return undefined
+      if(match === undefined) {
+        decode.bytes = 0
+        return undefined
+      }
       var rule = find(codecs, function (e) { return e.match === match })
       offset += tagCodec.decode.bytes
       var value = rule.codec.decode(buffer, offset)
-      decode.bytes = tagCodec.decode.bytes + rule.codec.decode.bytes
+
+      //handle case where the rule is not fully decoded
+      if(rule.codec.decode.bytes === 0)
+        decode.bytes = 0
+      else
+        decode.bytes = tagCodec.decode.bytes + rule.codec.decode.bytes
       return value
     },
     encodingLength: function (value) { return _length(value, getRule(value)) },
