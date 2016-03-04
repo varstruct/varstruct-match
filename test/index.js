@@ -9,13 +9,9 @@ var foobar = varstruct([
   { name: 'bar', type: varstruct.VarString(varstruct.UInt8) }
 ])
 
-function isFooBar (t) {
-  return t && t.foo && t.bar
-}
+function isFooBar (t) { return t && t.foo && t.bar }
 
-function isInteger (n) {
-  return typeof n === 'number' && Math.round(n) === n
-}
+function isInteger (n) { return typeof n === 'number' && n % 1 === 0 }
 
 var codec = varmatch(VarUIntProtobuf, [
   { match: Math.pow(10, 0), type: foobar, test: isFooBar },
