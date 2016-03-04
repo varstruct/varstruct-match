@@ -1,60 +1,91 @@
+var tap = require('tap')
 var varstruct = require('varstruct')
-var varint = varstruct.varint
+var VarUIntProtobuf = require('varint')
 
 var varmatch = require('../')
 
-var foobar =
-  varstruct({
-    foo: varint,
-    bar: varint
-  })
+var foobar = varstruct([
+  { name: 'foo', type: varstruct.UInt32BE },
+  { name: 'bar', type: varstruct.VarString(varstruct.UInt8) }
+])
 
 function isFooBar (t) {
-  return t.foo && t.bar
+  return t && t.foo && t.bar
 }
 
-function isInteger(n) {
-  return 'number' === typeof n && Math.round(n) === n
+function isInteger (n) {
+  return typeof n === 'number' && Math.round(n) === n
 }
 
-var codec = varmatch(varint)
-  .type(1, foobar, isFooBar)
-  .type(2, varstruct.vararray(varint, foobar), Array.isArray)
-  .type(3, varint, isInteger)
+var codec = varmatch(VarUIntProtobuf, [
+  { match: Math.pow(10, 0), type: foobar, test: isFooBar },
+  { match: Math.pow(10, 3), type: varstruct.VarArray(varstruct.UInt8, foobar), test: Array.isArray },
+  { match: Math.pow(10, 6), type: VarUIntProtobuf, test: isInteger }
+])
 
-var tape = require('tape')
-
-var expected = [
-  {foo: 1, bar: 2},
-  [
-    {foo: 1, bar: 2},
-    {foo: 3, bar: 4},
-    {foo: 5, bar: 6},
-  ],
-  1,
-  2,
-  3
-]
-
-expected.forEach(function (e) {
-
-  tape('encode/decode:' + JSON.stringify(e), function (t) {
-    var buffer = codec.encode(e)
-    console.log('encoded:', buffer)
-    t.equal(buffer.length, codec.encode.bytes)
-    console.log('decoded:', codec.decode(buffer))
-
-    t.deepEqual(codec.decode(buffer), e)
-    t.equal(buffer.length, codec.decode.bytes)
+tap.test('encode', function (t) {
+  t.test('no encoding for: null', function (t) {
+    t.throws(function () {
+      codec.encode(null)
+    }, new TypeError('no encoding for: null'))
     t.end()
   })
+
+  t.test('encode foobar', function (t) {
+    var buf = codec.encode({ foo: 42, bar: 'answer' })
+    t.same(codec.encode.bytes, 12)
+    t.same(buf.toString('hex'), '010000002a06616e73776572')
+    t.end()
+  })
+
+  t.test('encode integer', function (t) {
+    var buf = new Buffer([0x00].concat(new Array(4)))
+    t.ok(codec.encode(42, buf, 1) === buf)
+    t.same(codec.encode.bytes, 4)
+    t.same(buf.toString('hex'), '00c0843d2a')
+    t.end()
+  })
+
+  t.end()
 })
 
-tape('encode/decode all', function (t) {
-  var allcodec = varstruct.vararray(varint, codec)
-  var buffer = allcodec.encode(expected)
-  t.equal(buffer.length, allcodec.encode.bytes)
-  t.deepEqual(allcodec.decode(buffer), expected)
-  t.equal(buffer.length, allcodec.decode.bytes)
+tap.test('decode', function (t) {
+  t.test('no encoding for: 1', function (t) {
+    t.throws(function () {
+      codec.decode(new Buffer([0x0a]))
+    }, new TypeError('no encoding for: 10'))
+    t.end()
+  })
+
+  t.test('decode foobar', function (t) {
+    var buf = new Buffer('010000002a06616e73776572', 'hex')
+    t.same(codec.decode(buf), { foo: 42, bar: 'answer' })
+    t.same(codec.decode.bytes, 12)
+    t.end()
+  })
+
+  t.test('decode integer', function (t) {
+    var buf = new Buffer('00c0843d2a', 'hex')
+    t.same(codec.decode(buf, 1), 42)
+    t.same(codec.decode.bytes, 4)
+    t.end()
+  })
+
+  t.end()
+})
+
+tap.test('encodingLength', function (t) {
+  t.test('no encoding for: null', function (t) {
+    t.throws(function () {
+      codec.encodingLength(null)
+    }, new TypeError('no encoding for: null'))
+    t.end()
+  })
+
+  t.test('should return right length', function (t) {
+    t.same(codec.encodingLength(1), 4)
+    t.end()
+  })
+
   t.end()
 })

@@ -1,64 +1,46 @@
+'use strict'
 
-
-function find(array, test) {
-  for(var i in array)
-    if(test(array[i], i, array))
-      return array[i]
-}
-
-module.exports = function (tagCodec) {
-
-  var codecs = []
-
-  function getRule (value) {
-    return find(codecs, function (rule) { return rule.test(value) })
+function find (arr, test) {
+  for (var i = 0; i < arr.length; ++i) {
+    if (test(arr[i], i, arr)) return arr[i]
   }
 
-  function _length (value, rule) {
-    return (
-      (tagCodec.length || tagCodec.encodingLength(rule.match))
-    + (rule.codec.length || rule.codec.encodingLength(value))
-    )
+  return undefined
+}
+
+module.exports = function (tagType, items) {
+  items = items.map(function (codec) { return codec })
+
+  function _length (item, value) {
+    return tagType.encodingLength(item.match) + item.type.encodingLength(value)
   }
 
   return {
     encode: function encode (value, buffer, offset) {
-      var rule = find(codecs, function (rule) { return rule.test(value) })
-      if(!rule) throw new Error('no encoding for:'+JSON.stringify(value))
-      if(!buffer) {
-        buffer = new Buffer(_length(value, rule))
-        offset = 0
-      }
-      offset = offset | 0
-      tagCodec.encode(rule.match, buffer, offset)
-      offset += tagCodec.encode.bytes
-      rule.codec.encode(value, buffer, offset)
-      encode.bytes = tagCodec.encode.bytes + rule.codec.encode.bytes
-
+      var item = find(items, function (item) { return item.test(value) })
+      if (!item) throw new TypeError('no encoding for: ' + JSON.stringify(value))
+      if (!buffer) buffer = new Buffer(_length(item, value))
+      if (!offset) offset = 0
+      tagType.encode(item.match, buffer, offset)
+      var _offset = offset + tagType.encode.bytes
+      item.type.encode(value, buffer, _offset)
+      encode.bytes = item.type.encode.bytes + _offset - offset
       return buffer
     },
     decode: function decode (buffer, offset) {
-      offset = offset | 0
-      var match = tagCodec.decode(buffer, offset)
-      if(match === undefined) {
-        decode.bytes = 0
-        return undefined
-      }
-      var rule = find(codecs, function (e) { return e.match === match })
-      offset += tagCodec.decode.bytes
-      var value = rule.codec.decode(buffer, offset)
-
-      //handle case where the rule is not fully decoded
-      if(rule.codec.decode.bytes === 0)
-        decode.bytes = 0
-      else
-        decode.bytes = tagCodec.decode.bytes + rule.codec.decode.bytes
+      if (!offset) offset = 0
+      var match = tagType.decode(buffer, offset)
+      var item = find(items, function (item) { return item.match === match })
+      if (!item) throw new TypeError('no encoding for: ' + JSON.stringify(match))
+      var _offset = offset + tagType.decode.bytes
+      var value = item.type.decode(buffer, _offset)
+      decode.bytes = item.type.decode.bytes + _offset - offset
       return value
     },
-    encodingLength: function (value) { return _length(value, getRule(value)) },
-    type: function (match, codec, test) {
-      codecs.push({match: match, codec: codec, test: test})
-      return this
+    encodingLength: function (value) {
+      var item = find(items, function (item) { return item.test(value) })
+      if (item === undefined) throw new TypeError('no encoding for: ' + JSON.stringify(value))
+      return _length(item, value)
     }
   }
 }
