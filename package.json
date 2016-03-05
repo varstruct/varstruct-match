@@ -1,6 +1,6 @@
 {
   "name": "varstruct-match",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "encode/decode multiple data types",
   "homepage": "https://github.com/dominictarr/varstruct-match",
   "bugs": {
