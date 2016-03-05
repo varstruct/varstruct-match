@@ -27,13 +27,13 @@ module.exports = function (tagType, items) {
       encode.bytes = item.type.encode.bytes + _offset - offset
       return buffer
     },
-    decode: function decode (buffer, offset) {
+    decode: function decode (buffer, offset, end) {
       if (!offset) offset = 0
-      var match = tagType.decode(buffer, offset)
+      var match = tagType.decode(buffer, offset, end)
       var item = find(items, function (item) { return item.match === match })
       if (!item) throw new TypeError('no encoding for: ' + JSON.stringify(match))
       var _offset = offset + tagType.decode.bytes
-      var value = item.type.decode(buffer, _offset)
+      var value = item.type.decode(buffer, _offset, end)
       decode.bytes = item.type.decode.bytes + _offset - offset
       return value
     },
