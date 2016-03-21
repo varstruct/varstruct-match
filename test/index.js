@@ -1,4 +1,5 @@
-var tap = require('tap')
+'use strict'
+var test = require('tape').test
 var varstruct = require('varstruct')
 var VarUIntProtobuf = require('varint')
 
@@ -19,7 +20,7 @@ var codec = varmatch(VarUIntProtobuf, [
   { match: Math.pow(10, 6), type: VarUIntProtobuf, test: isInteger }
 ])
 
-tap.test('encode', function (t) {
+test('encode', function (t) {
   t.test('no encoding for: null', function (t) {
     t.throws(function () {
       codec.encode(null)
@@ -35,8 +36,8 @@ tap.test('encode', function (t) {
   })
 
   t.test('encode integer', function (t) {
-    var buf = new Buffer([0x00].concat(new Array(4)))
-    t.ok(codec.encode(42, buf, 1) === buf)
+    var buf = new Buffer([ 0x00 ].concat(new Array(4)))
+    t.true(codec.encode(42, buf, 1) === buf)
     t.same(codec.encode.bytes, 4)
     t.same(buf.toString('hex'), '00c0843d2a')
     t.end()
@@ -45,10 +46,10 @@ tap.test('encode', function (t) {
   t.end()
 })
 
-tap.test('decode', function (t) {
+test('decode', function (t) {
   t.test('no encoding for: 1', function (t) {
     t.throws(function () {
-      codec.decode(new Buffer([0x0a]))
+      codec.decode(new Buffer([ 0x0a ]))
     }, new TypeError('no encoding for: 10'))
     t.end()
   })
@@ -70,7 +71,7 @@ tap.test('decode', function (t) {
   t.end()
 })
 
-tap.test('encodingLength', function (t) {
+test('encodingLength', function (t) {
   t.test('no encoding for: null', function (t) {
     t.throws(function () {
       codec.encodingLength(null)

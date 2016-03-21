@@ -17,14 +17,16 @@
     "url": "https://github.com/dominictarr/varstruct-match.git"
   },
   "scripts": {
+    "coverage": "nyc npm run unit",
     "lint": "standard",
     "test": "npm run lint && npm run unit",
-    "unit": "tap --cov test/*.js"
+    "unit": "tape test/*.js"
   },
   "dependencies": {},
   "devDependencies": {
+    "nyc": "^6.1.1",
     "standard": "^6.0.7",
-    "tap": "^5.7.0",
+    "tape": "^4.5.1",
     "varint": "^4.0.0",
     "varstruct": "^5.0.1"
   }
